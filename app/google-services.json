@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "798444525524",
+    "firebase_url": "https://signup-demo-e623c.firebaseio.com",
+    "project_id": "signup-demo-e623c",
+    "storage_bucket": "signup-demo-e623c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:798444525524:android:8ba58a642903f610",
+        "android_client_info": {
+          "package_name": "com.example.ashis.firebaseauthdemo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "798444525524-mugpginmbjtnmpuj02pphgbn122a7gfa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoGoeusRq8mug5MWwZ1ej4vyvyPzr6FSg"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
