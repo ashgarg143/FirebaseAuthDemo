@@ -1,6 +1,5 @@
 package com.example.ashis.firebaseauthdemo;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -8,13 +7,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -24,7 +20,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -36,7 +31,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.database.collection.LLRBNode;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -108,20 +102,13 @@ public class ProfileActivity extends AppCompatActivity {
         buttonLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //signOutAlertDialogBuilder();
                 FirebaseAuth.getInstance().signOut();
                 finish();
                 startActivity(new Intent(ProfileActivity.this, LoginActivity.class));
             }
         });
 
-        final SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipeRefresh);
-        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                loadUserInformation();
-                swipeRefreshLayout.setRefreshing(false);
-            }
-        });
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle("User Profile");
@@ -131,7 +118,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        super.onCreateOptionsMenu(menu);
+        // super.onCreateOptionsMenu(menu);
 
         getMenuInflater().inflate(R.menu.menu, menu);
 
@@ -140,44 +127,22 @@ public class ProfileActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        super.onOptionsItemSelected(item);
         switch (item.getItemId()) {
-            case R.id.menuLogout:
-                item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
-                        signOutAlertDialogBuilder();
-                        return true;
-                    }
-                });
-                break;
-
-        }
-        return true;
-    }
-
-    private void signOutAlertDialogBuilder() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getApplicationContext());
-        builder.setMessage("Confirm?");
-        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
+            case R.id.menuLogout: {
                 FirebaseAuth.getInstance().signOut();
                 finish();
                 startActivity(new Intent(ProfileActivity.this, LoginActivity.class));
+                return true;
             }
-        });
-        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
+            default:
+                return super.onOptionsItemSelected(item);
 
-            }
-        });
-        builder.show();
+        }
     }
 
     private void loadUserInformation() {
         user = firebaseAuth.getCurrentUser();
+        user.reload();
         progressBar.setVisibility(View.VISIBLE);
 
         ValueEventListener postListener = new ValueEventListener() {
@@ -189,16 +154,50 @@ public class ProfileActivity extends AppCompatActivity {
                 if (userInfo != null) {
                     editTextName.setText(userInfo.userName);
                     editTextAddress.setText(userInfo.address);
+                    if (user.isEmailVerified()) {
+                        userInfo.isVerified = true;
+                        databaseReference.child("users").child(user.getUid()).child("isVerified").setValue(userInfo.isVerified);
+                        textViewVerification.setText("Email verified !");
+                        textViewVerification.setTextColor(Color.parseColor("#00C853"));
+                    } else {
+                        textViewVerification.setText("!! Email not verified (click to verify)");
+                        textViewVerification.setTextColor(Color.parseColor("#F44336"));
+                        textViewVerification.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                user.sendEmailVerification().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Void> task) {
+                                        Toast.makeText(getApplicationContext(), "verification email sent", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                        });
+                    }
                     if (userInfo.url == null) {
                         Toast.makeText(ProfileActivity.this, "Please add Profile image", Toast.LENGTH_SHORT).show();
                         Picasso.get().load(R.drawable.camera_icon).into(imageViewUserImage);
                         // Glide.with(getApplicationContext()).load(userInfo.url).into(imageViewUserImage);
                     } else {
-                        Picasso.get().load(userInfo.url).into(imageViewUserImage);
+                        userImageUrl = userInfo.url;
+                        Picasso.get().load(userImageUrl).into(imageViewUserImage);
                     }
 
 
                 } else {
+                    textViewVerification.setText("!! Email not verified (click to verify)");
+                    textViewVerification.setTextColor(Color.parseColor("#F44336"));
+                    textViewVerification.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            user.sendEmailVerification().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    Toast.makeText(getApplicationContext(), "verification email sent", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                    });
                     Toast.makeText(ProfileActivity.this, "Please add your information", Toast.LENGTH_SHORT).show();
                 }
                 progressBar.setVisibility(View.GONE);
@@ -212,24 +211,6 @@ public class ProfileActivity extends AppCompatActivity {
                 Toast.makeText(ProfileActivity.this, databaseError.toException().getMessage(), Toast.LENGTH_SHORT).show();                // ...
             }
         };
-        if (user.isEmailVerified()) {
-            textViewVerification.setText("Email verified !");
-            textViewVerification.setTextColor(Color.parseColor("#00C853"));
-        } else {
-            textViewVerification.setText("!! Email not verified (click to verify)");
-            textViewVerification.setTextColor(Color.parseColor("#F44336"));
-            textViewVerification.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    user.sendEmailVerification().addOnCompleteListener(new OnCompleteListener<Void>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                            Toast.makeText(getApplicationContext(), "verification email sent", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                }
-            });
-        }
 
         databaseReference.addValueEventListener(postListener);
     }
@@ -290,6 +271,7 @@ public class ProfileActivity extends AppCompatActivity {
     private void saveUserInformation() {
         String userName = editTextName.getText().toString().trim();
         String address = editTextAddress.getText().toString().trim();
+        boolean isVerified = false;
         if (TextUtils.isEmpty(userName)) {
             editTextName.setError("Name is required");
             editTextName.requestFocus();
@@ -301,15 +283,18 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
         user = firebaseAuth.getCurrentUser();
+        user.reload();
         if (user != null) {
-            if (userImageUri == null) {
+            if (userImageUri == null && imageViewUserImage == null) {
                 Toast.makeText(this, "Profile image can not be empty", Toast.LENGTH_SHORT).show();
                 // saveUserInformation();
-            } else if (userImageUrl == null) {
+            } else if (userImageUrl == null && imageViewUserImage == null) {
                 Toast.makeText(this, "Wait for image upload .!!", Toast.LENGTH_SHORT).show();
                 //saveUserInformation();
             } else {
-                UserInformation userInformation = new UserInformation(userName, address, userImageUrl);
+                if (user.isEmailVerified())
+                    isVerified = true;
+                UserInformation userInformation = new UserInformation(userName, address, userImageUrl, isVerified);
                 databaseReference.child("users").child(user.getUid()).setValue(userInformation).addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
@@ -334,4 +319,3 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
 }
-

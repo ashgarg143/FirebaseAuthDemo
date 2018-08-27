@@ -2,21 +2,19 @@ package com.example.ashis.firebaseauthdemo;
 
 public class UserInformation {
 
+
+    public UserInformation(String userName, String address, String url, boolean isVerified) {
+        this.userName = userName;
+        this.address = address;
+        this.url = url;
+        this.isVerified = isVerified;
+    }
+
     public String userName;
     public String address;
     public String url;
+    public boolean isVerified;
 
-    public String getUser() {
-        return userName;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public String getUrl() {
-        return url;
-    }
 
     public UserInformation() {
     }
